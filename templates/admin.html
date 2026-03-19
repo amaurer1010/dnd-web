@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Admin — D&D 5e Assistant{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <h2 class="page-title">Admin Dashboard</h2>
+
+  {% if pending > 0 %}
+  <div class="flash" style="background:#1a2a0a; border-color:#4a7a2a; color:#9aca6a;">
+    ⚠ {{ pending }} account{{ 's' if pending > 1 }} pending activation — enable them in the table below.
+  </div>
+  {% endif %}
+
+  <!-- Add User -->
+  <div class="card">
+    <h3>Add User</h3>
+    <form method="POST" action="{{ url_for('admin_add_user') }}" class="add-user-form">
+      <div class="form-row">
+        <div class="field">
+          <label>Username</label>
+          <input name="username" type="text" required />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input name="password" type="password" required />
+        </div>
+        <div class="field field-sm">
+          <label>Daily limit</label>
+          <input name="daily_limit" type="number" value="50" min="1" max="9999" />
+        </div>
+        <div class="field field-check">
+          <label>
+            <input name="is_admin" type="checkbox" />
+            Admin
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary">Add</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Users Table -->
+  <div class="card">
+    <h3>Users</h3>
+    <div class="table-wrap">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Today</th>
+            <th>Total</th>
+            <th>Last active</th>
+            <th>Daily limit</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr class="{{ 'row-inactive' if not user.is_active }}">
+            <td>{{ user.username }}</td>
+            <td>{{ 'Admin' if user.is_admin else 'User' }}</td>
+            <td>
+              <span class="badge {{ 'badge-active' if user.is_active else 'badge-inactive' }}">
+                {{ 'Active' if user.is_active else 'Inactive' }}
+              </span>
+            </td>
+            <td>{{ user.messages_today() }}</td>
+            <td>{{ user.total_messages() }}</td>
+            <td>{{ user.last_active() or '—' }}</td>
+
+            <!-- Daily limit form -->
+            <td>
+              {% if user.id != current_user.id %}
+              <form method="POST" action="{{ url_for('admin_set_limit', user_id=user.id) }}" class="inline-form">
+                <input name="daily_limit" type="number" value="{{ user.daily_limit }}" min="1" max="9999" class="limit-input" />
+                <button type="submit" class="btn btn-xs">Set</button>
+              </form>
+              {% else %}
+                {{ user.daily_limit }}
+              {% endif %}
+            </td>
+
+            <!-- Action buttons -->
+            <td class="actions">
+              {% if user.id != current_user.id %}
+              <form method="POST" action="{{ url_for('admin_toggle_user', user_id=user.id) }}" class="inline-form">
+                <button type="submit" class="btn btn-xs {{ 'btn-warning' if user.is_active else 'btn-success' }}">
+                  {{ 'Disable' if user.is_active else 'Enable' }}
+                </button>
+              </form>
+              <form method="POST" action="{{ url_for('admin_delete_user', user_id=user.id) }}" class="inline-form"
+                    onsubmit="return confirm('Delete {{ user.username }}?')">
+                <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+              </form>
+              {% else %}
+                <span class="muted">(you)</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

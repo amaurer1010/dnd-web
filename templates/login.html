@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Login — D&D 5e Assistant{% endblock %}
+
+{% block content %}
+<div class="login-page">
+  <div class="login-card">
+    <h1 class="login-title">⚔ D&D 5e Assistant</h1>
+    <p class="login-subtitle">Enter thy credentials, adventurer</p>
+
+    <form method="POST" action="{{ url_for('login') }}" class="login-form">
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" required autofocus />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Enter</button>
+    </form>
+
+    <p style="text-align:center; margin-top:1rem; font-size:0.85rem; color:var(--text-muted);">
+      No account? <a href="{{ url_for('register') }}">Request one</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

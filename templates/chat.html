@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Chat — D&D 5e Assistant{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="chat-layout">
+
+  <div class="chat-sidebar">
+    <div class="sidebar-header">Session</div>
+    <div class="sidebar-info">
+      <span id="msg-count">0</span> / {{ current_user.daily_limit }} messages today
+    </div>
+    <button class="btn btn-secondary btn-full" id="reset-btn">New Conversation</button>
+    <div class="sidebar-tips">
+      <p><strong>Tips:</strong></p>
+      <ul>
+        <li>Ask about spells, rules, classes, monsters</li>
+        <li>Request character creation help</li>
+        <li>Ask for combat rulings</li>
+        <li>Compare 2014 vs 2024 rules</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="chat-main">
+    <div class="chat-messages" id="messages">
+      <div class="message assistant">
+        <div class="message-content">
+          <p>Hail, adventurer! I am your D&D 5e rules expert. Ask me about spells, classes, monsters, rules, character creation — anything from the 2014 or 2024 Player's Handbook.</p>
+          <p>What would you like to know?</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="chat-input-row">
+        <textarea
+          id="user-input"
+          class="chat-input"
+          placeholder="Ask a rules question..."
+          rows="1"
+        ></textarea>
+        <button class="btn btn-primary" id="send-btn">Send</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const messagesEl  = document.getElementById("messages");
+  const inputEl     = document.getElementById("user-input");
+  const sendBtn     = document.getElementById("send-btn");
+  const resetBtn    = document.getElementById("reset-btn");
+  const msgCountEl  = document.getElementById("msg-count");
+  let   msgCount    = 0;
+
+  // Auto-grow textarea
+  inputEl.addEventListener("input", () => {
+    inputEl.style.height = "auto";
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + "px";
+  });
+
+  // Send on Enter (Shift+Enter for newline)
+  inputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  sendBtn.addEventListener("click", send);
+  resetBtn.addEventListener("click", resetConversation);
+
+  function appendMessage(role, html) {
+    const div = document.createElement("div");
+    div.className = `message ${role}`;
+    div.innerHTML = `<div class="message-content">${html}</div>`;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  function appendLoading() {
+    const div = document.createElement("div");
+    div.className = "message assistant loading";
+    div.innerHTML = `<div class="message-content"><span class="dots"><span>.</span><span>.</span><span>.</span></span></div>`;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  function setInputDisabled(disabled) {
+    inputEl.disabled = disabled;
+    sendBtn.disabled = disabled;
+  }
+
+  async function send() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    appendMessage("user", escapeHtml(text).replace(/\n/g, "<br>"));
+    inputEl.value = "";
+    inputEl.style.height = "auto";
+    setInputDisabled(true);
+
+    const loadingEl = appendLoading();
+
+    try {
+      const res  = await fetch("/chat/message", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ message: text }),
+      });
+      const data = await res.json();
+      loadingEl.remove();
+
+      if (data.error) {
+        appendMessage("assistant error", escapeHtml(data.error));
+      } else {
+        appendMessage("assistant", marked.parse(data.response));
+        msgCount++;
+        msgCountEl.textContent = msgCount;
+      }
+    } catch (err) {
+      loadingEl.remove();
+      appendMessage("assistant error", "Connection error. Please try again.");
+    }
+
+    setInputDisabled(false);
+    inputEl.focus();
+  }
+
+  async function resetConversation() {
+    await fetch("/chat/reset", { method: "POST" });
+    messagesEl.innerHTML = "";
+    appendMessage("assistant", "<p>Conversation cleared. What would you like to know?</p>");
+    msgCount = 0;
+    msgCountEl.textContent = 0;
+  }
+
+  function escapeHtml(text) {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+</script>
+{% endblock %}

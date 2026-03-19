@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Character Profile — D&D 5e Assistant{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <h2 class="page-title">⚔ Character Profile</h2>
+  <div class="card">
+    <p style="color: var(--text-muted); margin-bottom: 1.25rem; font-size: 0.9rem;">
+      This is optional. Fill in as much or as little as you like — the assistant will use this as context for every conversation, so you don't have to repeat yourself.
+    </p>
+
+    <form method="POST" action="{{ url_for('profile') }}">
+      <div class="field" style="margin-bottom: 1rem;">
+        <label>Character Details</label>
+        <textarea
+          name="character_context"
+          rows="16"
+          placeholder="Name: Thorin Ironforge
+Race: Mountain Dwarf
+Class & Level: Paladin 7
+Subclass: Oath of Devotion
+Background: Soldier
+Ruleset: 2024 PHB
+
+Ability Scores: STR 18  DEX 10  CON 16  INT 8  WIS 14  CHA 16
+HP: 68    AC: 18 (plate armour)    Speed: 25ft    Initiative: +0
+
+Spell Save DC: 15    Spell Attack: +7
+Spell Slots: 1st ×4, 2nd ×3, 3rd ×2
+
+Spells Prepared:
+  1st: Bless, Cure Wounds, Shield of Faith
+  2nd: Aid, Lesser Restoration
+  3rd: Beacon of Hope, Revivify
+
+Equipment: Warhammer, Shield, Plate Armour, Holy Symbol
+
+Features & Traits:
+  - Divine Smite, Lay on Hands (35 HP remaining)
+  - Channel Divinity: Sacred Weapon, Turn the Unholy
+  - Aura of Protection (+4 to all saving throws within 10ft)
+
+Campaign Notes:
+  - Homebrew campaign, Forgotten Realms setting
+  - Party: Wizard (lvl 7), Rogue (lvl 7), Cleric (lvl 6)
+  - Currently in Waterdeep investigating a thieves guild"
+          style="width:100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: var(--font-body); font-size: 0.9rem; padding: 0.75rem; resize: vertical; line-height: 1.6;"
+        >{{ current_user.character_context or '' }}</textarea>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem;">
+        <button type="submit" class="btn btn-primary">Save Profile</button>
+        <a href="{{ url_for('chat') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
